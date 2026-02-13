@@ -1,7 +1,3 @@
-import pickle
-import tempfile
-import os
-
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,9 +9,6 @@ from app.schemas.upload import SniffResult, UploadResponse
 from app.services import upload_service
 
 router = APIRouter(prefix="/upload", tags=["upload"])
-
-# Temporary storage for sniffed DataFrames keyed by user_id:filename
-_sniff_cache: dict[str, tuple] = {}
 
 
 @router.post("/sniff", response_model=SniffResult)
@@ -31,22 +24,12 @@ async def sniff_file(
         raw_json = await file.read()
 
     result = upload_service.sniff_data(df, raw_json)
-
-    # Cache the parsed DataFrame for the confirm step
-    cache_key = f"{user_id}:{file.filename}"
-    # Save df to a temp pickle file to avoid holding large DataFrames in memory
-    # (pickle handles mixed-type columns that parquet cannot)
-    tmp = tempfile.NamedTemporaryFile(suffix=".pkl", delete=False)
-    pickle.dump(df, tmp)
-    tmp.close()
-    _sniff_cache[cache_key] = (tmp.name, file.filename, result)
-
     return result
 
 
 @router.post("/confirm", response_model=UploadResponse)
 async def confirm_upload(
-    original_filename: str = Form(...),
+    file: UploadFile = File(...),
     collection_name: str = Form(...),
     db_type: str = Form(...),
     overwrite: str = Form("false"),
@@ -55,36 +38,28 @@ async def confirm_upload(
     session: AsyncSession = Depends(get_pg_session),
 ):
     """Confirm upload and ingest data into the chosen database."""
-    from app.middleware.input_guard import validate_collection_name, sanitize_filename
+    from app.middleware.input_guard import validate_collection_name
 
     collection_name = validate_collection_name(collection_name)
-    original_filename = sanitize_filename(original_filename)
 
     if db_type not in ("postgres", "mongodb"):
         raise ValidationError("db_type must be 'postgres' or 'mongodb'")
 
-    cache_key = f"{user_id}:{original_filename}"
-    cached = _sniff_cache.pop(cache_key, None)
-    if not cached:
-        raise ValidationError("No sniffed data found. Please sniff the file again.")
-
-    cache_path, filename, sniff_result = cached
+    # Re-parse the file (no longer relies on in-memory cache)
+    df = await upload_service.parse_file(file)
+    raw_json = None
+    if file.filename and file.filename.endswith(".json"):
+        await file.seek(0)
+        raw_json = await file.read()
+    sniff_result = upload_service.sniff_data(df, raw_json)
 
     # Check for existing collection (owned by this user only)
     existing = await metadata_repo.get_owned_by_name(user_id, collection_name)
     if existing and overwrite.lower() != "true":
-        # Put cached data back so user can retry with overwrite
-        _sniff_cache[cache_key] = (cache_path, filename, sniff_result)
         raise AppError(
             f"Collection '{collection_name}' already exists. Set overwrite to replace it.",
             status_code=409,
         )
-
-    try:
-        with open(cache_path, "rb") as f:
-            df = pickle.load(f)
-    finally:
-        os.unlink(cache_path)
 
     # Drop existing data if overwriting
     if existing and overwrite.lower() == "true":
@@ -108,7 +83,7 @@ async def confirm_upload(
     await upload_service.save_metadata(
         collection_name=collection_name,
         db_type=db_type,
-        original_filename=filename,
+        original_filename=file.filename or "",
         owner_id=user_id,
         owner_username=owner_username,
         row_count=row_count,

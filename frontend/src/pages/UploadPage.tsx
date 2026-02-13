@@ -97,7 +97,7 @@ export default function UploadPage() {
     setStep('uploading');
 
     const formData = new FormData();
-    formData.append('original_filename', file.name);
+    formData.append('file', file);
     formData.append('collection_name', collectionName);
     formData.append('db_type', dbType);
     formData.append('overwrite', overwrite ? 'true' : 'false');
