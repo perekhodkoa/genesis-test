@@ -1,0 +1,29 @@
+# Web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Database - PostgreSQL
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.1
+
+# Database - MongoDB
+motor==3.6.0
+
+# Auth
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+
+# File parsing
+python-multipart==0.0.20
+pandas==2.2.3
+openpyxl==3.1.5
+
+# LLM
+httpx==0.28.1
+
+# Config
+pydantic-settings==2.7.1
+
+# Utilities
+python-dotenv==1.0.1
