@@ -1,8 +1,8 @@
 model_list:
   - model_name: default
     litellm_params:
-      model: openai/gpt-4o
-      api_key: os.environ/OPENAI_API_KEY
+      model: anthropic/claude-sonnet-4-5-20250929
+      api_key: os.environ/ANTHROPIC_API_KEY
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

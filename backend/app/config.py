@@ -5,8 +5,8 @@ class Settings(BaseSettings):
     # PostgreSQL
     postgres_host: str = "localhost"
     postgres_port: int = 5432
-    postgres_user: str = ""
-    postgres_password: str = ""
+    postgres_user: str = "postgres"
+    postgres_password: str = "postgres"
     postgres_db: str = "datalens"
 
     # MongoDB
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # LiteLLM Proxy
     litellm_proxy_url: str = "http://localhost:4000"
-    litellm_api_key: str = ""
+    litellm_api_key: str = "YOUR_LITELLM_API_KEY"
 
     # Backend
     backend_host: str = "0.0.0.0"

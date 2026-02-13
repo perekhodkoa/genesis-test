@@ -33,6 +33,7 @@ services:
       - "4000:4000"
     environment:
       LITELLM_MASTER_KEY: ${LITELLM_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     volumes:
       - ./litellm-config.yml:/app/config.yaml
     command: ["--config", "/app/config.yaml"]

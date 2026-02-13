@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 import httpx
 
@@ -170,7 +171,12 @@ async def _call_llm(messages: list[dict]) -> dict:
     content = data["choices"][0]["message"]["content"]
 
     try:
-        return json.loads(content)
+        # Strip markdown code fencing that LLMs often add
+        cleaned = content.strip()
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r"^```json?\s*", "", cleaned)
+            cleaned = re.sub(r"\s*```$", "", cleaned)
+        return json.loads(cleaned)
     except json.JSONDecodeError:
         logger.error("LLM returned non-JSON response: %s", content[:500])
         raise LLMError("LLM returned invalid JSON response")
