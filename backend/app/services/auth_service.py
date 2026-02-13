@@ -8,6 +8,7 @@ from app.repositories import user_repo
 
 
 async def register(session: AsyncSession, username: str, password: str) -> dict:
+    username = username.lower()
     existing = await user_repo.get_user_by_username(session, username)
     if existing:
         raise AppError("Username already taken", status_code=409)
@@ -19,7 +20,7 @@ async def register(session: AsyncSession, username: str, password: str) -> dict:
 
 
 async def login(session: AsyncSession, username: str, password: str) -> dict:
-    user = await user_repo.get_user_by_username(session, username)
+    user = await user_repo.get_user_by_username(session, username.lower())
     if not user or not verify_password(password, user.password_hash):
         raise AuthenticationError("Invalid username or password")
 
