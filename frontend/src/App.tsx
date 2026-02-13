@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { ModelProvider } from './hooks/useModel';
 import Layout from './components/Layout';
 import AuthPage from './pages/AuthPage';
 import ChatPage from './pages/ChatPage';
@@ -41,7 +42,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<PublicRoute><AuthPage /></PublicRoute>} />
-          <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route element={<ProtectedRoute><ModelProvider><Layout /></ModelProvider></ProtectedRoute>}>
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/chat/:sessionId" element={<ChatPage />} />
             <Route path="/upload" element={<UploadPage />} />

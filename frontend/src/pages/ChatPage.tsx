@@ -12,11 +12,13 @@ import type {
 import ChatMessageView from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
 import TrashIcon from '../components/icons/TrashIcon';
+import { useModel } from '../hooks/useModel';
 import './ChatPage.css';
 
 export default function ChatPage() {
   const { sessionId: urlSessionId } = useParams();
   const navigate = useNavigate();
+  const { selectedModel } = useModel();
 
   const [sessions, setSessions] = useState<ChatSessionSummary[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(urlSessionId ?? null);
@@ -108,6 +110,7 @@ export default function ChatPage() {
       const res = await api.post<ChatResponse>('/api/chat/message', {
         session_id: currentSessionId,
         message,
+        model: selectedModel,
       });
 
       setCurrentSessionId(res.session_id);

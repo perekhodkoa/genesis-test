@@ -9,6 +9,17 @@ export interface User {
   username: string;
 }
 
+// Models
+export interface ModelInfo {
+  id: string;
+  name: string;
+}
+
+export interface ModelsResponse {
+  models: ModelInfo[];
+  default: string;
+}
+
 // Invites
 export interface InviteCodeResponse {
   code: string;

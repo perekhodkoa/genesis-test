@@ -9,7 +9,7 @@ from app.config import settings
 from app.db.postgres import init_postgres, close_postgres
 from app.db.mongodb import init_mongodb, close_mongodb
 from app.middleware.error_handler import ErrorHandlerMiddleware
-from app.routes import auth, upload, collections, chat
+from app.routes import auth, upload, collections, chat, models
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
@@ -42,6 +42,7 @@ app.include_router(auth.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
 app.include_router(collections.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
+app.include_router(models.router, prefix="/api")
 
 
 @app.get("/api/health")

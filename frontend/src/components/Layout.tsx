@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import ModelSelector from './ModelSelector';
 import './Layout.css';
 
 export default function Layout() {
@@ -24,6 +25,7 @@ export default function Layout() {
           </NavLink>
         </nav>
         <div className="layout-user">
+          <ModelSelector />
           <span className="layout-username">{user?.username}</span>
           <button onClick={logout} className="btn-logout">Log out</button>
         </div>

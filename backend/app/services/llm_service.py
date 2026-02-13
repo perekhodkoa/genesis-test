@@ -76,6 +76,7 @@ async def generate_query(
     user_message: str,
     collection_schemas: list[dict],
     chat_history: list[dict] | None = None,
+    model: str = "default",
 ) -> dict:
     """Ask LLM to generate a database query for the user's question."""
     schema_text = _format_schemas(collection_schemas)
@@ -103,7 +104,7 @@ async def generate_query(
         ),
     })
 
-    return await _call_llm(messages)
+    return await _call_llm(messages, model=model)
 
 
 async def generate_answer(
@@ -112,6 +113,7 @@ async def generate_answer(
     query_type: str,
     results: list[dict],
     collection_schemas: list[dict],
+    model: str = "default",
 ) -> dict:
     """Ask LLM to produce a natural language answer from query results."""
     # Truncate results to avoid token burn
@@ -141,7 +143,7 @@ async def generate_answer(
         },
     ]
 
-    return await _call_llm(messages)
+    return await _call_llm(messages, model=model)
 
 
 def _format_schemas(schemas: list[dict]) -> str:
@@ -160,7 +162,7 @@ def _format_schemas(schemas: list[dict]) -> str:
     return "\n\n".join(parts)
 
 
-async def _call_llm(messages: list[dict]) -> dict:
+async def _call_llm(messages: list[dict], model: str = "default") -> dict:
     """Call LiteLLM proxy and parse JSON response."""
     url = f"{settings.litellm_proxy_url}/v1/chat/completions"
     headers = {}
@@ -168,7 +170,7 @@ async def _call_llm(messages: list[dict]) -> dict:
         headers["Authorization"] = f"Bearer {settings.litellm_api_key}"
 
     payload = {
-        "model": "default",
+        "model": model,
         "messages": messages,
         "temperature": 0.1,
         "response_format": {"type": "json_object"},

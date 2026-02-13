@@ -28,6 +28,7 @@ async def send_message(
         owner_id=user_id,
         session_id=body.session_id,
         message=body.message,
+        model=body.model,
     )
     return result
 
