@@ -9,6 +9,11 @@ interface Props {
   initialValue?: string;
 }
 
+/** Build the @ref string: plain for own, qualified for shared */
+function mentionRef(col: CollectionSummary): string {
+  return col.is_own ? col.name : `${col.owner_username}:${col.name}`;
+}
+
 export default function ChatInput({ onSend, disabled, collections, initialValue }: Props) {
   const [value, setValue] = useState(initialValue ?? '');
   const [showMentions, setShowMentions] = useState(false);
@@ -19,7 +24,6 @@ export default function ChatInput({ onSend, disabled, collections, initialValue 
   useEffect(() => {
     if (initialValue !== undefined) {
       setValue(initialValue);
-      // Focus and put cursor at end
       setTimeout(() => {
         const el = inputRef.current;
         if (el) {
@@ -30,17 +34,31 @@ export default function ChatInput({ onSend, disabled, collections, initialValue 
     }
   }, [initialValue]);
 
-  const filteredCollections = collections.filter((c) =>
-    c.name.toLowerCase().includes(mentionFilter.toLowerCase())
-  );
+  // Detect name duplicates for disambiguation display
+  const nameCounts = collections.reduce<Record<string, number>>((acc, c) => {
+    acc[c.name] = (acc[c.name] || 0) + 1;
+    return acc;
+  }, {});
+
+  const filteredCollections = collections
+    .filter((c) => {
+      const q = mentionFilter.toLowerCase();
+      return c.name.toLowerCase().includes(q) ||
+        c.owner_username.toLowerCase().includes(q);
+    })
+    // Sort: own first, then alphabetical
+    .sort((a, b) => {
+      if (a.is_own !== b.is_own) return a.is_own ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
 
   const handleChange = (text: string) => {
     setValue(text);
 
-    // Detect @ mention trigger
     const cursor = inputRef.current?.selectionStart ?? text.length;
     const beforeCursor = text.slice(0, cursor);
-    const atMatch = beforeCursor.match(/@(\w*)$/);
+    // Match @filter where filter can include ":" for qualified refs
+    const atMatch = beforeCursor.match(/@([\w:]*)$/);
 
     if (atMatch) {
       setShowMentions(true);
@@ -51,18 +69,19 @@ export default function ChatInput({ onSend, disabled, collections, initialValue 
     }
   };
 
-  const insertMention = (name: string) => {
+  const insertMention = (col: CollectionSummary) => {
     const cursor = inputRef.current?.selectionStart ?? value.length;
     const beforeCursor = value.slice(0, cursor);
     const afterCursor = value.slice(cursor);
     const atPos = beforeCursor.lastIndexOf('@');
 
-    const newValue = beforeCursor.slice(0, atPos) + `@${name} ` + afterCursor;
+    const ref = mentionRef(col);
+    const newValue = beforeCursor.slice(0, atPos) + `@${ref} ` + afterCursor;
     setValue(newValue);
     setShowMentions(false);
 
     setTimeout(() => {
-      const newCursor = atPos + name.length + 2;
+      const newCursor = atPos + ref.length + 2;
       inputRef.current?.setSelectionRange(newCursor, newCursor);
       inputRef.current?.focus();
     }, 0);
@@ -82,7 +101,7 @@ export default function ChatInput({ onSend, disabled, collections, initialValue 
       }
       if (e.key === 'Tab' || e.key === 'Enter') {
         e.preventDefault();
-        insertMention(filteredCollections[mentionIndex].name);
+        insertMention(filteredCollections[mentionIndex]);
         return;
       }
       if (e.key === 'Escape') {
@@ -113,12 +132,19 @@ export default function ChatInput({ onSend, disabled, collections, initialValue 
           <div className="mention-dropdown">
             {filteredCollections.slice(0, 8).map((col, i) => (
               <button
-                key={col.name}
+                key={`${col.name}-${col.owner_username}`}
                 type="button"
                 className={`mention-item ${i === mentionIndex ? 'active' : ''}`}
-                onMouseDown={(e) => { e.preventDefault(); insertMention(col.name); }}
+                onMouseDown={(e) => { e.preventDefault(); insertMention(col); }}
               >
-                <span className="mention-name">@{col.name}</span>
+                <span className="mention-name">
+                  @{col.name}
+                </span>
+                {(nameCounts[col.name] ?? 0) > 1 && (
+                  <span className="mention-owner">
+                    {col.is_own ? '(yours)' : `(${col.owner_username})`}
+                  </span>
+                )}
                 <span className={`mention-db ${col.db_type}`}>
                   {col.db_type === 'postgres' ? 'PG' : 'Mongo'}
                 </span>

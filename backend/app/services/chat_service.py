@@ -10,9 +10,39 @@ from app.repositories import chat_repo, metadata_repo, query_repo
 from app.services import llm_service
 
 
-def extract_collection_refs(message: str) -> list[str]:
-    """Extract @collection_name references from the message."""
-    return re.findall(r"@(\w+)", message)
+def extract_collection_refs(message: str) -> list[tuple[str, str | None]]:
+    """Extract @collection_name and @owner:collection_name references.
+
+    Returns list of (collection_name, owner_username_or_none).
+    - @collection_name -> (collection_name, None) — resolve to user's own first
+    - @owner:collection_name -> (collection_name, owner) — resolve by specific owner
+    """
+    refs = []
+    # Match @owner:collection or @collection
+    for match in re.finditer(r"@(?:(\w+):)?(\w+)", message):
+        owner = match.group(1)  # None if plain @collection
+        name = match.group(2)
+        refs.append((name, owner))
+    return refs
+
+
+async def _resolve_schemas(owner_id: str, refs: list[tuple[str, str | None]]) -> list[dict]:
+    """Resolve collection refs to metadata, handling qualified owner:name refs."""
+    schemas = []
+    seen = set()
+    for name, ref_owner in refs:
+        if ref_owner:
+            # Qualified ref: find by owner username
+            meta = await metadata_repo.get_by_name_and_owner_username(name, ref_owner)
+        else:
+            # Unqualified: prefer user's own, fall back to any accessible
+            meta = await metadata_repo.get_owned_by_name(owner_id, name)
+            if not meta:
+                meta = await metadata_repo.get_by_name(owner_id, name)
+        if meta and meta["name"] not in seen:
+            schemas.append(meta)
+            seen.add(meta["name"])
+    return schemas
 
 
 async def handle_message(
@@ -33,20 +63,21 @@ async def handle_message(
 
     # 2. Extract @references and fetch their schemas
     refs = extract_collection_refs(message)
+    ref_names = [name for name, _ in refs]
     if not refs:
         # If no explicit refs, fetch all user collections for context
         all_meta = await metadata_repo.get_all_for_user(owner_id)
         schemas = all_meta[:10]  # limit context
     else:
-        schemas = await metadata_repo.get_by_names(owner_id, refs)
+        schemas = await _resolve_schemas(owner_id, refs)
         if not schemas:
             raise ValidationError(
-                f"Referenced collections not found: {', '.join(refs)}",
-                detail="Use @collection_name to reference your uploaded data",
+                f"Referenced collections not found: {', '.join(ref_names)}",
+                detail="Use @collection_name or @owner:collection_name to reference data",
             )
 
     # 3. Save user message to history
-    user_msg = ChatMessage(role="user", content=message, referenced_collections=refs)
+    user_msg = ChatMessage(role="user", content=message, referenced_collections=ref_names)
     await chat_repo.append_message(session_id, owner_id, user_msg)
 
     # 4. Get chat history for context
@@ -80,7 +111,7 @@ async def handle_message(
         query_type=query_type,
         visualization=viz_data,
         follow_ups=follow_ups,
-        referenced_collections=refs or [collection_name] if collection_name else [],
+        referenced_collections=ref_names or ([collection_name] if collection_name else []),
     )
     await chat_repo.append_message(session_id, owner_id, assistant_msg)
 

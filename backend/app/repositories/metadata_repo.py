@@ -51,6 +51,15 @@ async def get_owned_by_name(owner_id: str, name: str) -> dict | None:
     )
 
 
+async def get_by_name_and_owner_username(name: str, owner_username: str) -> dict | None:
+    """Find a public collection by name and owner username (for qualified @owner:name refs)."""
+    db = get_mongodb()
+    return await db[COLLECTION].find_one(
+        {"name": name, "owner_username": owner_username, "is_public": True},
+        {"_id": 0},
+    )
+
+
 async def set_public(owner_id: str, name: str, is_public: bool) -> None:
     db = get_mongodb()
     await db[COLLECTION].update_one(

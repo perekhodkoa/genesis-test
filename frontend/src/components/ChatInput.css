@@ -101,6 +101,12 @@
   font-weight: 600;
 }
 
+.mention-owner {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
 .mention-db {
   font-size: 10px;
   padding: 0 5px;
