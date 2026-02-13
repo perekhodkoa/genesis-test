@@ -1,0 +1,16 @@
+.chart-container {
+  margin: var(--space-3) 0;
+  padding: var(--space-4);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.chart-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-3);
+  text-align: center;
+}

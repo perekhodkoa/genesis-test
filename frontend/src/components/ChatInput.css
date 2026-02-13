@@ -1,0 +1,125 @@
+.chat-input-form {
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+}
+
+.chat-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2);
+  transition: border-color var(--transition-fast);
+}
+
+.chat-input-wrap:focus-within {
+  border-color: var(--color-primary);
+}
+
+.chat-input {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  min-height: 24px;
+  max-height: 150px;
+}
+
+.chat-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.chat-send-btn {
+  padding: var(--space-2) var(--space-4);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.chat-send-btn:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.chat-send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Mention dropdown */
+.mention-dropdown {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: var(--space-1);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.mention-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background: transparent;
+  border: none;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.mention-item:hover,
+.mention-item.active {
+  background: var(--color-bg-tertiary);
+}
+
+.mention-name {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.mention-db {
+  font-size: 10px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+}
+
+.mention-db.postgres {
+  background: rgba(108, 140, 255, 0.15);
+  color: var(--color-primary);
+}
+
+.mention-db.mongodb {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--color-success);
+}
+
+.mention-info {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
