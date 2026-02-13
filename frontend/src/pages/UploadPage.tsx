@@ -1,7 +1,7 @@
-import { useState, useCallback, useRef, type DragEvent, type ChangeEvent } from 'react';
+import { useState, useCallback, useRef, useEffect, type DragEvent, type ChangeEvent } from 'react';
 import { api } from '../api/client';
 import { ApiError } from '../api/client';
-import type { SniffResult, UploadResponse } from '../api/types';
+import type { SniffResult, UploadResponse, CollectionSummary } from '../api/types';
 import './UploadPage.css';
 
 const ACCEPTED_EXTENSIONS = ['.csv', '.tsv', '.xlsx', '.xls', '.json'];
@@ -14,10 +14,20 @@ export default function UploadPage() {
   const [sniffResult, setSniffResult] = useState<SniffResult | null>(null);
   const [dbType, setDbType] = useState<'postgres' | 'mongodb'>('postgres');
   const [collectionName, setCollectionName] = useState('');
+  const [overwrite, setOverwrite] = useState(false);
+  const [existingCollections, setExistingCollections] = useState<string[]>([]);
   const [uploadResult, setUploadResult] = useState<UploadResponse | null>(null);
   const [error, setError] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    api.get<CollectionSummary[]>('/api/collections/').then(
+      (cols) => setExistingCollections(cols.map((c) => c.name))
+    ).catch(() => {});
+  }, []);
+
+  const nameConflict = existingCollections.includes(collectionName);
 
   const reset = () => {
     setStep('idle');
@@ -25,8 +35,13 @@ export default function UploadPage() {
     setSniffResult(null);
     setDbType('postgres');
     setCollectionName('');
+    setOverwrite(false);
     setUploadResult(null);
     setError('');
+    // Refresh collections list for next upload
+    api.get<CollectionSummary[]>('/api/collections/').then(
+      (cols) => setExistingCollections(cols.map((c) => c.name))
+    ).catch(() => {});
   };
 
   const validateFile = (f: File): boolean => {
@@ -83,6 +98,7 @@ export default function UploadPage() {
     formData.append('original_filename', file.name);
     formData.append('collection_name', collectionName);
     formData.append('db_type', dbType);
+    formData.append('overwrite', overwrite ? 'true' : 'false');
 
     try {
       const result = await api.postForm<UploadResponse>('/api/upload/confirm', formData);
@@ -225,14 +241,30 @@ export default function UploadPage() {
             </label>
           </div>
 
+          {nameConflict && (
+            <div className="overwrite-warning">
+              <div className="overwrite-message">
+                Collection <strong>{collectionName}</strong> already exists.
+              </div>
+              <label className="overwrite-toggle">
+                <input
+                  type="checkbox"
+                  checked={overwrite}
+                  onChange={(e) => setOverwrite(e.target.checked)}
+                />
+                <span>Overwrite existing data</span>
+              </label>
+            </div>
+          )}
+
           <div className="upload-actions">
             <button className="btn-secondary" onClick={reset}>Cancel</button>
             <button
               className="btn-primary"
               onClick={handleConfirm}
-              disabled={!collectionName.match(/^[a-z][a-z0-9_]*$/)}
+              disabled={!collectionName.match(/^[a-z][a-z0-9_]*$/) || (nameConflict && !overwrite)}
             >
-              Upload to {dbType === 'postgres' ? 'PostgreSQL' : 'MongoDB'}
+              {nameConflict && overwrite ? 'Replace' : 'Upload to'} {dbType === 'postgres' ? 'PostgreSQL' : 'MongoDB'}
             </button>
           </div>
         </div>

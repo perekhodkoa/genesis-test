@@ -6,7 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.postgres import get_pg_session
 from app.dependencies import get_current_user_id
-from app.middleware.error_handler import ValidationError
+from app.middleware.error_handler import ValidationError, AppError
+from app.repositories import metadata_repo
 from app.schemas.upload import SniffResult, UploadResponse
 from app.services import upload_service
 
@@ -45,6 +46,7 @@ async def confirm_upload(
     original_filename: str = Form(...),
     collection_name: str = Form(...),
     db_type: str = Form(...),
+    overwrite: str = Form("false"),
     user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_pg_session),
 ):
@@ -59,11 +61,28 @@ async def confirm_upload(
 
     parquet_path, filename, sniff_result = cached
 
+    # Check for existing collection
+    existing = await metadata_repo.get_by_name(user_id, collection_name)
+    if existing and overwrite.lower() != "true":
+        # Put cached data back so user can retry with overwrite
+        _sniff_cache[cache_key] = (parquet_path, filename, sniff_result)
+        raise AppError(
+            f"Collection '{collection_name}' already exists. Set overwrite to replace it.",
+            status_code=409,
+        )
+
     try:
         import pandas as pd
         df = pd.read_parquet(parquet_path)
     finally:
         os.unlink(parquet_path)
+
+    # Drop existing data if overwriting
+    if existing and overwrite.lower() == "true":
+        if existing["db_type"] == "postgres":
+            await upload_service.drop_existing_postgres(session, collection_name)
+        else:
+            await upload_service.drop_existing_mongodb(collection_name)
 
     if db_type == "postgres":
         row_count = await upload_service.ingest_postgres(
@@ -81,10 +100,11 @@ async def confirm_upload(
         sniff_result=sniff_result,
     )
 
+    action = "replaced" if existing else "uploaded"
     return UploadResponse(
         collection_name=collection_name,
         db_type=db_type,
         row_count=row_count,
         column_count=len(sniff_result["columns"]),
-        message=f"Successfully uploaded {row_count} rows into {db_type}:{collection_name}",
+        message=f"Successfully {action} {row_count} rows into {db_type}:{collection_name}",
     )

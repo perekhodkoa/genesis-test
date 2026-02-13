@@ -72,20 +72,82 @@ async def parse_file(file: UploadFile) -> pd.DataFrame:
 
 
 def _parse_json(content: bytes) -> pd.DataFrame:
-    """Parse JSON content. Handles both array-of-objects and nested structures."""
+    """Parse JSON content. Handles wrapper objects, GeoJSON, arrays, and nested structures."""
     data = json.loads(content)
 
     if isinstance(data, list):
-        return pd.json_normalize(data)
+        items = data
     elif isinstance(data, dict):
-        # Check if it's a single record or has a data key
-        for key in ("data", "results", "records", "items", "rows"):
-            if key in data and isinstance(data[key], list):
-                return pd.json_normalize(data[key])
-        # Treat as single record
-        return pd.json_normalize([data])
+        items = _unwrap_json_object(data)
     else:
         raise ValidationError("JSON must be an object or array of objects")
+
+    if not items:
+        raise ValidationError("JSON contains no records")
+
+    items = _flatten_geojson(items)
+    return pd.json_normalize(items)
+
+
+def _unwrap_json_object(data: dict) -> list[dict]:
+    """Unwrap a JSON wrapper object to extract the array of records.
+
+    Strategy:
+    1. Check well-known keys (data, results, records, items, rows, features)
+    2. If no match, detect a single top-level field whose value is a list of dicts
+    3. Otherwise treat as a single record
+    """
+    well_known = ("data", "results", "records", "items", "rows", "features")
+    for key in well_known:
+        if key in data and isinstance(data[key], list) and data[key]:
+            return data[key]
+
+    # Auto-detect: find fields whose value is a list of dicts
+    array_fields = [
+        k for k, v in data.items()
+        if isinstance(v, list) and v and isinstance(v[0], dict)
+    ]
+    if len(array_fields) == 1:
+        return data[array_fields[0]]
+
+    # Treat the whole object as a single record
+    return [data]
+
+
+def _flatten_geojson(items: list[dict]) -> list[dict]:
+    """If items look like GeoJSON features, flatten properties to top level."""
+    if not items:
+        return items
+
+    sample = items[0]
+    is_geojson = (
+        isinstance(sample, dict)
+        and sample.get("type") == "Feature"
+        and isinstance(sample.get("properties"), dict)
+    )
+    if not is_geojson:
+        return items
+
+    flattened = []
+    for item in items:
+        props = item.get("properties") or {}
+        row = {**props}
+
+        geometry = item.get("geometry")
+        if isinstance(geometry, dict):
+            row["geometry_type"] = geometry.get("type", "")
+            coords = geometry.get("coordinates")
+            if coords is not None:
+                row["geometry_coordinates"] = json.dumps(coords)
+
+        # Preserve any other top-level fields besides type/properties/geometry
+        for k, v in item.items():
+            if k not in ("type", "properties", "geometry"):
+                row[k] = v
+
+        flattened.append(row)
+
+    return flattened
 
 
 def _is_nested(data: Any) -> bool:
@@ -145,6 +207,7 @@ async def ingest_postgres(
     columns: list[dict],
 ) -> int:
     """Create table and insert data into PostgreSQL."""
+    df = _clean_dataframe(df.copy())
     df.columns = [_sanitize_column_name(c) for c in df.columns]
 
     # Build CREATE TABLE
@@ -177,12 +240,28 @@ async def ingest_postgres(
     return len(records)
 
 
+def _clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """Strip whitespace from string columns and coerce numeric-looking columns."""
+    for col in df.columns:
+        if df[col].dtype == object:
+            # Strip whitespace from string values
+            df[col] = df[col].map(lambda x: x.strip() if isinstance(x, str) else x)
+            # Try to coerce to numeric (int/float) — leaves non-numeric as-is
+            coerced = pd.to_numeric(df[col], errors="coerce")
+            # Only convert if most non-null values successfully converted
+            non_null = df[col].notna().sum()
+            if non_null > 0 and coerced.notna().sum() / non_null >= 0.8:
+                df[col] = coerced
+    return df
+
+
 async def ingest_mongodb(
     df: pd.DataFrame,
     collection_name: str,
 ) -> int:
     """Create collection and insert data into MongoDB."""
     db = get_mongodb()
+    df = _clean_dataframe(df.copy())
     records = json.loads(df.to_json(orient="records", date_format="iso"))
     if not records:
         return 0
@@ -196,6 +275,18 @@ async def ingest_mongodb(
         total += len(batch)
 
     return total
+
+
+async def drop_existing_postgres(session: AsyncSession, collection_name: str) -> None:
+    """Drop a PostgreSQL table if it exists."""
+    await session.execute(text(f'DROP TABLE IF EXISTS "{collection_name}" CASCADE'))
+    await session.commit()
+
+
+async def drop_existing_mongodb(collection_name: str) -> None:
+    """Drop a MongoDB collection if it exists."""
+    db = get_mongodb()
+    await db[collection_name].drop()
 
 
 async def save_metadata(

@@ -266,6 +266,39 @@
   border-radius: var(--radius-full);
 }
 
+/* Overwrite warning */
+.overwrite-warning {
+  padding: var(--space-3) var(--space-4);
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.overwrite-message {
+  font-size: var(--text-sm);
+  color: var(--color-warning);
+}
+
+.overwrite-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.overwrite-toggle input[type="checkbox"] {
+  accent-color: var(--color-warning);
+  width: 16px;
+  height: 16px;
+}
+
 /* Actions */
 .upload-actions {
   display: flex;
