@@ -174,7 +174,7 @@ async def _call_llm(messages: list[dict]) -> dict:
         # Strip markdown code fencing that LLMs often add
         cleaned = content.strip()
         if cleaned.startswith("```"):
-            cleaned = re.sub(r"^```json?\s*", "", cleaned)
+            cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned)
             cleaned = re.sub(r"\s*```$", "", cleaned)
         return json.loads(cleaned)
     except json.JSONDecodeError:
