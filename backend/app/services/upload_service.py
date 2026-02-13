@@ -296,6 +296,7 @@ async def save_metadata(
     owner_id: str,
     row_count: int,
     sniff_result: dict,
+    is_public: bool = False,
 ) -> None:
     """Save collection metadata to MongoDB."""
     meta = CollectionMetadata(
@@ -307,5 +308,6 @@ async def save_metadata(
         columns=[ColumnSchema(**c) for c in sniff_result["columns"]],
         description=f"Uploaded from {original_filename}. {row_count} rows, {len(sniff_result['columns'])} columns.",
         sample_rows=sniff_result["sample_rows"],
+        is_public=is_public,
     )
     await metadata_repo.upsert_metadata(meta)

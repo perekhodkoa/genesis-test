@@ -97,6 +97,8 @@ export default function BrowsePage() {
                     <span className={`card-db-badge ${col.db_type}`}>
                       {col.db_type === 'postgres' ? 'PostgreSQL' : 'MongoDB'}
                     </span>
+                    {col.is_public && <span className="card-public-badge">Public</span>}
+                    {!col.is_own && <span className="card-shared-badge">Shared</span>}
                   </div>
                   <div className="card-meta">
                     <span>{col.row_count} rows</span>

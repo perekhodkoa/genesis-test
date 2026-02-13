@@ -47,6 +47,7 @@ async def confirm_upload(
     collection_name: str = Form(...),
     db_type: str = Form(...),
     overwrite: str = Form("false"),
+    is_public: str = Form("false"),
     user_id: str = Depends(get_current_user_id),
     session: AsyncSession = Depends(get_pg_session),
 ):
@@ -61,8 +62,8 @@ async def confirm_upload(
 
     parquet_path, filename, sniff_result = cached
 
-    # Check for existing collection
-    existing = await metadata_repo.get_by_name(user_id, collection_name)
+    # Check for existing collection (owned by this user only)
+    existing = await metadata_repo.get_owned_by_name(user_id, collection_name)
     if existing and overwrite.lower() != "true":
         # Put cached data back so user can retry with overwrite
         _sniff_cache[cache_key] = (parquet_path, filename, sniff_result)
@@ -98,6 +99,7 @@ async def confirm_upload(
         owner_id=user_id,
         row_count=row_count,
         sniff_result=sniff_result,
+        is_public=is_public.lower() == "true",
     )
 
     action = "replaced" if existing else "uploaded"

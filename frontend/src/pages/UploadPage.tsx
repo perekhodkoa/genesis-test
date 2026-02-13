@@ -15,6 +15,7 @@ export default function UploadPage() {
   const [dbType, setDbType] = useState<'postgres' | 'mongodb'>('postgres');
   const [collectionName, setCollectionName] = useState('');
   const [overwrite, setOverwrite] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [existingCollections, setExistingCollections] = useState<string[]>([]);
   const [uploadResult, setUploadResult] = useState<UploadResponse | null>(null);
   const [error, setError] = useState('');
@@ -36,6 +37,7 @@ export default function UploadPage() {
     setDbType('postgres');
     setCollectionName('');
     setOverwrite(false);
+    setIsPublic(false);
     setUploadResult(null);
     setError('');
     // Refresh collections list for next upload
@@ -99,6 +101,7 @@ export default function UploadPage() {
     formData.append('collection_name', collectionName);
     formData.append('db_type', dbType);
     formData.append('overwrite', overwrite ? 'true' : 'false');
+    formData.append('is_public', isPublic ? 'true' : 'false');
 
     try {
       const result = await api.postForm<UploadResponse>('/api/upload/confirm', formData);
@@ -238,6 +241,18 @@ export default function UploadPage() {
                   {sniffResult.recommended_db === 'mongodb' && <span className="rec-badge">Rec.</span>}
                 </button>
               </div>
+            </label>
+
+            <label className="config-field">
+              <div className="public-toggle">
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={(e) => setIsPublic(e.target.checked)}
+                />
+                <span>Make this dataset public</span>
+              </div>
+              <span className="config-hint">Public datasets are visible and queryable by all users</span>
             </label>
           </div>
 

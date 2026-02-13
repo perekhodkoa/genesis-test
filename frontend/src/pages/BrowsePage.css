@@ -138,6 +138,24 @@
   color: var(--color-success);
 }
 
+.card-public-badge {
+  font-size: var(--text-xs);
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--color-warning);
+}
+
+.card-shared-badge {
+  font-size: var(--text-xs);
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+  background: rgba(167, 139, 250, 0.15);
+  color: #a78bfa;
+}
+
 .card-meta {
   display: flex;
   gap: var(--space-4);

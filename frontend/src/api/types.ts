@@ -41,6 +41,8 @@ export interface CollectionSummary {
   row_count: number;
   column_count: number;
   description: string;
+  is_public: boolean;
+  is_own: boolean;
   created_at: string;
 }
 

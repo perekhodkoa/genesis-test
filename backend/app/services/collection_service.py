@@ -11,6 +11,8 @@ async def list_collections(owner_id: str) -> list[dict]:
             "row_count": m["row_count"],
             "column_count": len(m.get("columns", [])),
             "description": m.get("description", ""),
+            "is_public": m.get("is_public", False),
+            "is_own": m.get("owner_id") == owner_id,
             "created_at": m["created_at"],
         }
         for m in items
@@ -28,6 +30,8 @@ async def get_collection_detail(owner_id: str, name: str) -> dict | None:
         "row_count": meta["row_count"],
         "column_count": len(meta.get("columns", [])),
         "description": meta.get("description", ""),
+        "is_public": meta.get("is_public", False),
+        "is_own": meta.get("owner_id") == owner_id,
         "created_at": meta["created_at"],
         "columns": meta.get("columns", []),
         "sample_rows": meta.get("sample_rows", []),

@@ -11,6 +11,8 @@ class CollectionSummary(BaseModel):
     row_count: int
     column_count: int
     description: str
+    is_public: bool = False
+    is_own: bool = True
     created_at: datetime
 
 

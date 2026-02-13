@@ -21,4 +21,5 @@ class CollectionMetadata(BaseModel):
     columns: list[ColumnSchema] = Field(default_factory=list)
     description: str = ""  # auto-generated brief description
     sample_rows: list[dict[str, Any]] = Field(default_factory=list)  # first 3-5 rows
+    is_public: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
