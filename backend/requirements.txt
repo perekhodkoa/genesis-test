@@ -18,6 +18,7 @@ python-jose[cryptography]==3.3.0
 python-multipart==0.0.20
 pandas==2.2.3
 openpyxl==3.1.5
+pyarrow==18.1.0
 
 # LLM
 httpx==0.28.1
