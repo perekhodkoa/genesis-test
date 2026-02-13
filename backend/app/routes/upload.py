@@ -1,3 +1,4 @@
+import pickle
 import tempfile
 import os
 
@@ -33,9 +34,11 @@ async def sniff_file(
 
     # Cache the parsed DataFrame for the confirm step
     cache_key = f"{user_id}:{file.filename}"
-    # Save df to a temp parquet file to avoid holding large DataFrames in memory
-    tmp = tempfile.NamedTemporaryFile(suffix=".parquet", delete=False)
-    df.to_parquet(tmp.name, index=False)
+    # Save df to a temp pickle file to avoid holding large DataFrames in memory
+    # (pickle handles mixed-type columns that parquet cannot)
+    tmp = tempfile.NamedTemporaryFile(suffix=".pkl", delete=False)
+    pickle.dump(df, tmp)
+    tmp.close()
     _sniff_cache[cache_key] = (tmp.name, file.filename, result)
 
     return result
@@ -65,23 +68,23 @@ async def confirm_upload(
     if not cached:
         raise ValidationError("No sniffed data found. Please sniff the file again.")
 
-    parquet_path, filename, sniff_result = cached
+    cache_path, filename, sniff_result = cached
 
     # Check for existing collection (owned by this user only)
     existing = await metadata_repo.get_owned_by_name(user_id, collection_name)
     if existing and overwrite.lower() != "true":
         # Put cached data back so user can retry with overwrite
-        _sniff_cache[cache_key] = (parquet_path, filename, sniff_result)
+        _sniff_cache[cache_key] = (cache_path, filename, sniff_result)
         raise AppError(
             f"Collection '{collection_name}' already exists. Set overwrite to replace it.",
             status_code=409,
         )
 
     try:
-        import pandas as pd
-        df = pd.read_parquet(parquet_path)
+        with open(cache_path, "rb") as f:
+            df = pickle.load(f)
     finally:
-        os.unlink(parquet_path)
+        os.unlink(cache_path)
 
     # Drop existing data if overwriting
     if existing and overwrite.lower() == "true":
