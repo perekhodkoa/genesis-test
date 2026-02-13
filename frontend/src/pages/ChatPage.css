@@ -6,12 +6,35 @@
 
 /* Sidebar */
 .chat-sidebar {
-  width: 260px;
   background: var(--color-bg-secondary);
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+}
+
+/* Split bar */
+.chat-split-bar {
+  width: 4px;
+  cursor: col-resize;
+  background: transparent;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+  position: relative;
+}
+
+.chat-split-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -2px;
+  width: 8px;
+}
+
+.chat-split-bar:hover,
+.chat-split-bar:active {
+  background: var(--color-primary);
 }
 
 .new-chat-btn {
@@ -70,9 +93,42 @@
   max-width: 100%;
 }
 
+.session-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
 .session-meta {
   font-size: 10px;
   color: var(--color-text-muted);
+}
+
+.session-delete-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  line-height: 0;
+  flex-shrink: 0;
+}
+
+.session-item:hover .session-delete-btn {
+  display: flex;
+}
+
+.session-delete-btn:hover {
+  color: var(--color-error);
+  background: var(--color-error-bg);
 }
 
 .session-empty {
@@ -88,6 +144,7 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow: hidden;
 }
 
 .chat-messages {

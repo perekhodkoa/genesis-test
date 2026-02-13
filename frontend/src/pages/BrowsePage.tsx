@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../api/client';
 import { ApiError } from '../api/client';
 import type { CollectionSummary, CollectionDetail } from '../api/types';
+import TrashIcon from '../components/icons/TrashIcon';
 import './BrowsePage.css';
 
 export default function BrowsePage() {
@@ -13,6 +14,7 @@ export default function BrowsePage() {
   const [detail, setDetail] = useState<CollectionDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   useEffect(() => {
     loadCollections();
@@ -62,6 +64,24 @@ export default function BrowsePage() {
       setError(err instanceof ApiError ? err.message : 'Failed to update sharing');
     } finally {
       setToggling(null);
+    }
+  };
+
+  const deleteCollection = async (name: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm(`Delete collection "${name}"? This will permanently remove all data.`)) return;
+    setDeleting(name);
+    try {
+      await api.del(`/api/collections/${name}`);
+      setCollections((prev) => prev.filter((c) => c.name !== name));
+      if (expanded === name) {
+        setExpanded(null);
+        setDetail(null);
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to delete collection');
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -154,6 +174,14 @@ export default function BrowsePage() {
                             ? 'This collection is visible to all users'
                             : 'Only you can see this collection'}
                         </span>
+                        <button
+                          className="delete-btn"
+                          onClick={(e) => deleteCollection(col.name, e)}
+                          disabled={deleting === col.name}
+                          title="Delete collection"
+                        >
+                          <TrashIcon size={13} />
+                        </button>
                       </div>
                     )}
 

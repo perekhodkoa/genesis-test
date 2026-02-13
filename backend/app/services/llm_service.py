@@ -178,5 +178,12 @@ async def _call_llm(messages: list[dict]) -> dict:
             cleaned = re.sub(r"\s*```$", "", cleaned)
         return json.loads(cleaned)
     except json.JSONDecodeError:
-        logger.error("LLM returned non-JSON response: %s", content[:500])
-        raise LLMError("LLM returned invalid JSON response")
+        logger.warning("LLM returned non-JSON, wrapping as answer: %s", content[:200])
+        return {
+            "query": "",
+            "query_type": "sql",
+            "collection_name": "",
+            "answer": content.strip(),
+            "visualization": None,
+            "follow_ups": [],
+        }

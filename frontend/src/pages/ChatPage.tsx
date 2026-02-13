@@ -11,6 +11,7 @@ import type {
 } from '../api/types';
 import ChatMessageView from '../components/ChatMessage';
 import ChatInput from '../components/ChatInput';
+import TrashIcon from '../components/icons/TrashIcon';
 import './ChatPage.css';
 
 export default function ChatPage() {
@@ -24,7 +25,9 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [pendingFollowUp, setPendingFollowUp] = useState<string | undefined>(undefined);
+  const [sidebarWidth, setSidebarWidth] = useState(260);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
 
   // Load sessions and collections on mount
   useEffect(() => {
@@ -44,6 +47,31 @@ export default function ChatPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Sidebar resize drag
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragging.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMove = (ev: MouseEvent) => {
+      if (!dragging.current) return;
+      const newWidth = Math.min(Math.max(ev.clientX, 180), 500);
+      setSidebarWidth(newWidth);
+    };
+
+    const onUp = () => {
+      dragging.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }, []);
 
   const loadSession = async (id: string) => {
     try {
@@ -106,6 +134,20 @@ export default function ChatPage() {
     // The ChatInput will pick this up via initialValue and user can edit or send
   };
 
+  const handleDeleteSession = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Delete this chat session?')) return;
+    try {
+      await api.del(`/api/chat/sessions/${id}`);
+      setSessions((prev) => prev.filter((s) => s.session_id !== id));
+      if (currentSessionId === id) {
+        setCurrentSessionId(null);
+        setMessages([]);
+        navigate('/chat');
+      }
+    } catch { /* silent */ }
+  };
+
   const handleNewChat = () => {
     setCurrentSessionId(null);
     setMessages([]);
@@ -120,24 +162,36 @@ export default function ChatPage() {
   return (
     <div className="chat-page">
       {/* Session sidebar */}
-      <aside className="chat-sidebar">
+      <aside className="chat-sidebar" style={{ width: sidebarWidth }}>
         <button className="new-chat-btn" onClick={handleNewChat}>+ New Chat</button>
         <div className="session-list">
           {sessions.map((s) => (
-            <button
+            <div
               key={s.session_id}
               className={`session-item ${currentSessionId === s.session_id ? 'active' : ''}`}
               onClick={() => handleSelectSession(s.session_id)}
             >
               <span className="session-title">{s.title}</span>
-              <span className="session-meta">{s.message_count} msgs</span>
-            </button>
+              <div className="session-bottom">
+                <span className="session-meta">{s.message_count} msgs</span>
+                <button
+                  className="session-delete-btn"
+                  onClick={(e) => handleDeleteSession(s.session_id, e)}
+                  title="Delete chat"
+                >
+                  <TrashIcon size={15} />
+                </button>
+              </div>
+            </div>
           ))}
           {sessions.length === 0 && (
             <p className="session-empty">No conversations yet</p>
           )}
         </div>
       </aside>
+
+      {/* Resizable split bar */}
+      <div className="chat-split-bar" onMouseDown={handleDragStart} />
 
       {/* Main chat area */}
       <div className="chat-main">

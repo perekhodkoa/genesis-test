@@ -44,3 +44,4 @@ coverage/
 # Uploads
 backend/uploads/*
 !backend/uploads/.gitkeep
+.claude/

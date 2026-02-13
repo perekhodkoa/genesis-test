@@ -45,3 +45,12 @@ async def get_session(session_id: str, user_id: str = Depends(get_current_user_i
     if not data:
         raise NotFoundError("Chat session not found")
     return data
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_session(session_id: str, user_id: str = Depends(get_current_user_id)):
+    """Delete a chat session."""
+    deleted = await chat_repo.delete_session(session_id, user_id)
+    if not deleted:
+        raise NotFoundError("Chat session not found")
+    return {"deleted": True}

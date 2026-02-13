@@ -40,6 +40,12 @@ async def update_title(session_id: str, owner_id: str, title: str) -> None:
     )
 
 
+async def delete_session(session_id: str, owner_id: str) -> bool:
+    db = get_mongodb()
+    result = await db[COLLECTION].delete_one({"session_id": session_id, "owner_id": owner_id})
+    return result.deleted_count > 0
+
+
 async def list_sessions(owner_id: str) -> list[dict]:
     db = get_mongodb()
     cursor = db[COLLECTION].find(
