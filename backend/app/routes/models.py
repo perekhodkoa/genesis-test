@@ -75,5 +75,12 @@ async def _fetch_models_from_proxy() -> list[dict]:
 async def list_models(_user_id: str = Depends(get_current_user_id)):
     """List available LLM models."""
     models = await _fetch_models_from_proxy()
-    default = models[0]["id"] if models else ""
+    # Prefer claude-sonnet-4-5 if available
+    default = ""
+    for m in models:
+        if "claude-sonnet-4-5" in m.get("name", "") or "claude-sonnet-4-5" in m.get("id", ""):
+            default = m["id"]
+            break
+    if not default and models:
+        default = models[0]["id"]
     return {"models": models, "default": default}
