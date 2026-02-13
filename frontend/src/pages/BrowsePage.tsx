@@ -12,6 +12,7 @@ export default function BrowsePage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [detail, setDetail] = useState<CollectionDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [toggling, setToggling] = useState<string | null>(null);
 
   useEffect(() => {
     loadCollections();
@@ -48,6 +49,27 @@ export default function BrowsePage() {
       setDetailLoading(false);
     }
   };
+
+  const togglePublic = async (name: string, currentlyPublic: boolean, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setToggling(name);
+    try {
+      await api.patch(`/api/collections/${name}/public`, { is_public: !currentlyPublic });
+      setCollections((prev) =>
+        prev.map((c) => c.name === name ? { ...c, is_public: !currentlyPublic } : c)
+      );
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to update sharing');
+    } finally {
+      setToggling(null);
+    }
+  };
+
+  // Detect name collisions for disambiguation
+  const nameCounts = collections.reduce<Record<string, number>>((acc, c) => {
+    acc[c.name] = (acc[c.name] || 0) + 1;
+    return acc;
+  }, {});
 
   const filtered = collections.filter(
     (c) =>
@@ -90,7 +112,7 @@ export default function BrowsePage() {
 
           <div className="browse-list">
             {filtered.map((col) => (
-              <div key={col.name} className={`browse-card ${expanded === col.name ? 'expanded' : ''}`}>
+              <div key={`${col.name}-${col.owner_username}`} className={`browse-card ${expanded === col.name ? 'expanded' : ''}`}>
                 <button className="browse-card-header" onClick={() => toggleExpand(col.name)}>
                   <div className="card-info">
                     <span className="card-name">{col.name}</span>
@@ -98,7 +120,10 @@ export default function BrowsePage() {
                       {col.db_type === 'postgres' ? 'PostgreSQL' : 'MongoDB'}
                     </span>
                     {col.is_public && <span className="card-public-badge">Public</span>}
-                    {!col.is_own && <span className="card-shared-badge">Shared</span>}
+                    {!col.is_own && <span className="card-shared-badge">Shared by: {col.owner_username}</span>}
+                    {(nameCounts[col.name] ?? 0) > 1 && col.is_own && col.owner_username && (
+                      <span className="card-owner-badge">Yours</span>
+                    )}
                   </div>
                   <div className="card-meta">
                     <span>{col.row_count} rows</span>
@@ -111,6 +136,27 @@ export default function BrowsePage() {
 
                 {expanded === col.name && (
                   <div className="browse-card-body">
+                    {col.is_own && (
+                      <div className="card-share-bar">
+                        <button
+                          className={`share-btn ${col.is_public ? 'shared' : ''}`}
+                          onClick={(e) => togglePublic(col.name, col.is_public, e)}
+                          disabled={toggling === col.name}
+                        >
+                          {toggling === col.name
+                            ? 'Updating...'
+                            : col.is_public
+                              ? 'Make Private'
+                              : 'Share Publicly'}
+                        </button>
+                        <span className="share-hint">
+                          {col.is_public
+                            ? 'This collection is visible to all users'
+                            : 'Only you can see this collection'}
+                        </span>
+                      </div>
+                    )}
+
                     {detailLoading ? (
                       <div className="card-body-loading"><div className="spinner" /></div>
                     ) : detail ? (

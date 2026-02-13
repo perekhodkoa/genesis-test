@@ -17,6 +17,7 @@ class CollectionMetadata(BaseModel):
     db_type: str  # "postgres" or "mongodb"
     original_filename: str
     owner_id: str
+    owner_username: str = ""
     row_count: int = 0
     columns: list[ColumnSchema] = Field(default_factory=list)
     description: str = ""  # auto-generated brief description

@@ -156,6 +156,15 @@
   color: #a78bfa;
 }
 
+.card-owner-badge {
+  font-size: var(--text-xs);
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
 .card-meta {
   display: flex;
   gap: var(--space-4);
@@ -196,6 +205,52 @@
   display: flex;
   justify-content: center;
   padding: var(--space-6);
+}
+
+.card-share-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  margin-top: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.share-btn {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.share-btn:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.share-btn.shared {
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.share-btn.shared:hover:not(:disabled) {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.share-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.share-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
 }
 
 .detail-section {

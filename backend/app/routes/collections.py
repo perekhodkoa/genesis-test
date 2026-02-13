@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app.dependencies import get_current_user_id
 from app.middleware.error_handler import NotFoundError
-from app.schemas.collection import CollectionDetail, CollectionSummary
+from app.schemas.collection import CollectionDetail, CollectionSummary, TogglePublicRequest
 from app.services import collection_service
 
 router = APIRouter(prefix="/collections", tags=["collections"])
@@ -19,3 +19,16 @@ async def get_collection(name: str, user_id: str = Depends(get_current_user_id))
     if not detail:
         raise NotFoundError(f"Collection '{name}' not found")
     return detail
+
+
+@router.patch("/{name}/public")
+async def toggle_public(
+    name: str,
+    body: TogglePublicRequest,
+    user_id: str = Depends(get_current_user_id),
+):
+    """Toggle public visibility of a collection. Only the owner can do this."""
+    result = await collection_service.toggle_public(user_id, name, body.is_public)
+    if not result:
+        raise NotFoundError(f"Collection '{name}' not found or you are not the owner")
+    return result

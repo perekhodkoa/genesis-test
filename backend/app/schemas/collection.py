@@ -13,7 +13,12 @@ class CollectionSummary(BaseModel):
     description: str
     is_public: bool = False
     is_own: bool = True
+    owner_username: str = ""
     created_at: datetime
+
+
+class TogglePublicRequest(BaseModel):
+    is_public: bool
 
 
 class CollectionDetail(CollectionSummary):

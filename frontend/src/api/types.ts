@@ -43,6 +43,7 @@ export interface CollectionSummary {
   description: string;
   is_public: boolean;
   is_own: boolean;
+  owner_username: string;
   created_at: string;
 }
 

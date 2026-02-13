@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.postgres import get_pg_session
 from app.dependencies import get_current_user_id
 from app.middleware.error_handler import ValidationError, AppError
-from app.repositories import metadata_repo
+from app.repositories import metadata_repo, user_repo
 from app.schemas.upload import SniffResult, UploadResponse
 from app.services import upload_service
 
@@ -92,11 +92,17 @@ async def confirm_upload(
     else:
         row_count = await upload_service.ingest_mongodb(df, collection_name)
 
+    # Fetch username for metadata
+    import uuid
+    user = await user_repo.get_user_by_id(session, uuid.UUID(user_id))
+    owner_username = user.username if user else ""
+
     await upload_service.save_metadata(
         collection_name=collection_name,
         db_type=db_type,
         original_filename=filename,
         owner_id=user_id,
+        owner_username=owner_username,
         row_count=row_count,
         sniff_result=sniff_result,
         is_public=is_public.lower() == "true",

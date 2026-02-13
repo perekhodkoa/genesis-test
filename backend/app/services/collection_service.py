@@ -13,6 +13,7 @@ async def list_collections(owner_id: str) -> list[dict]:
             "description": m.get("description", ""),
             "is_public": m.get("is_public", False),
             "is_own": m.get("owner_id") == owner_id,
+            "owner_username": m.get("owner_username", ""),
             "created_at": m["created_at"],
         }
         for m in items
@@ -32,7 +33,21 @@ async def get_collection_detail(owner_id: str, name: str) -> dict | None:
         "description": meta.get("description", ""),
         "is_public": meta.get("is_public", False),
         "is_own": meta.get("owner_id") == owner_id,
+        "owner_username": meta.get("owner_username", ""),
         "created_at": meta["created_at"],
         "columns": meta.get("columns", []),
         "sample_rows": meta.get("sample_rows", []),
+    }
+
+
+async def toggle_public(owner_id: str, name: str, is_public: bool) -> dict | None:
+    """Toggle public visibility. Only the owner can do this."""
+    meta = await metadata_repo.get_owned_by_name(owner_id, name)
+    if not meta:
+        return None
+    await metadata_repo.set_public(owner_id, name, is_public)
+    meta["is_public"] = is_public
+    return {
+        "name": meta["name"],
+        "is_public": is_public,
     }

@@ -51,6 +51,14 @@ async def get_owned_by_name(owner_id: str, name: str) -> dict | None:
     )
 
 
+async def set_public(owner_id: str, name: str, is_public: bool) -> None:
+    db = get_mongodb()
+    await db[COLLECTION].update_one(
+        {"name": name, "owner_id": owner_id},
+        {"$set": {"is_public": is_public}},
+    )
+
+
 async def delete_metadata(owner_id: str, name: str) -> bool:
     db = get_mongodb()
     result = await db[COLLECTION].delete_one({"name": name, "owner_id": owner_id})
