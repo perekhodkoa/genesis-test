@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     # LiteLLM Proxy
     litellm_proxy_url: str = "http://localhost:4000"
     litellm_api_key: str = "YOUR_LITELLM_API_KEY"
+    preferred_model: str = "claude-sonnet-4-5"
 
     # Backend
     backend_host: str = "0.0.0.0"
