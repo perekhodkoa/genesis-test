@@ -5,6 +5,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.middleware.error_handler import AppError, ValidationError
+from app.middleware.input_guard import validate_chat_message, validate_collection_name
 from app.models.chat import ChatMessage, VisualizationData
 from app.repositories import chat_repo, metadata_repo, query_repo
 from app.services import llm_service
@@ -52,6 +53,9 @@ async def handle_message(
     message: str,
 ) -> dict:
     """Process a user chat message end-to-end."""
+    # 0. Validate and sanitize user input
+    message = validate_chat_message(message)
+
     # 1. Create or retrieve chat session
     if not session_id:
         session_id = str(uuid.uuid4())
@@ -135,6 +139,13 @@ async def _execute_query(
     """Execute a generated query, returning results or an error message."""
     if not query:
         return []
+
+    # Validate LLM-generated collection name before using it
+    if collection_name:
+        try:
+            validate_collection_name(collection_name)
+        except Exception:
+            raise AppError("LLM generated an invalid collection name", status_code=400)
 
     try:
         if query_type == "sql":

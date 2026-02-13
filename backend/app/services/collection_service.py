@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.middleware.input_guard import validate_collection_name
 from app.repositories import metadata_repo
 from app.services.upload_service import drop_existing_postgres, drop_existing_mongodb
 
@@ -58,6 +59,7 @@ async def toggle_public(owner_id: str, name: str, is_public: bool) -> dict | Non
 
 async def delete_collection(session: AsyncSession, owner_id: str, name: str) -> bool:
     """Delete a collection: drop data from DB and remove metadata. Owner only."""
+    name = validate_collection_name(name)
     meta = await metadata_repo.get_owned_by_name(owner_id, name)
     if not meta:
         return False

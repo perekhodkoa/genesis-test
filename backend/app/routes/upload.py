@@ -52,6 +52,11 @@ async def confirm_upload(
     session: AsyncSession = Depends(get_pg_session),
 ):
     """Confirm upload and ingest data into the chosen database."""
+    from app.middleware.input_guard import validate_collection_name, sanitize_filename
+
+    collection_name = validate_collection_name(collection_name)
+    original_filename = sanitize_filename(original_filename)
+
     if db_type not in ("postgres", "mongodb"):
         raise ValidationError("db_type must be 'postgres' or 'mongodb'")
 

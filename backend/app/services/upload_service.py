@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.mongodb import get_mongodb
 from app.middleware.error_handler import ValidationError, AppError
+from app.middleware.input_guard import validate_collection_name, sanitize_filename
 from app.models.metadata import CollectionMetadata, ColumnSchema
 from app.repositories import metadata_repo
 
@@ -207,6 +208,7 @@ async def ingest_postgres(
     columns: list[dict],
 ) -> int:
     """Create table and insert data into PostgreSQL."""
+    collection_name = validate_collection_name(collection_name)
     df = _clean_dataframe(df.copy())
     df.columns = [_sanitize_column_name(c) for c in df.columns]
 
@@ -279,6 +281,7 @@ async def ingest_mongodb(
 
 async def drop_existing_postgres(session: AsyncSession, collection_name: str) -> None:
     """Drop a PostgreSQL table if it exists."""
+    collection_name = validate_collection_name(collection_name)
     await session.execute(text(f'DROP TABLE IF EXISTS "{collection_name}" CASCADE'))
     await session.commit()
 
@@ -300,6 +303,7 @@ async def save_metadata(
     is_public: bool = False,
 ) -> None:
     """Save collection metadata to MongoDB."""
+    original_filename = sanitize_filename(original_filename)
     meta = CollectionMetadata(
         name=collection_name,
         db_type=db_type,
