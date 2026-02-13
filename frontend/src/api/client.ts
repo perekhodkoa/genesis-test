@@ -31,9 +31,13 @@ class ApiClient {
     });
 
     if (res.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-      throw new Error('Unauthorized');
+      const body = await res.json().catch(() => ({ error: 'Invalid credentials' }));
+      // Only redirect if we had a token (expired session), not a failed login attempt
+      if (this.getToken()) {
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+      }
+      throw new ApiError(body.error || 'Invalid credentials', 401, body.detail);
     }
 
     if (!res.ok) {
