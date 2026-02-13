@@ -51,7 +51,7 @@ async def handle_message(
     owner_id: str,
     session_id: str | None,
     message: str,
-    model: str = "default",
+    model: str,
 ) -> dict:
     """Process a user chat message end-to-end."""
     # 0. Validate and sanitize user input
@@ -90,7 +90,7 @@ async def handle_message(
     history = session_data.get("messages", []) if session_data else []
 
     # 5. Ask LLM to generate query
-    query_response = await llm_service.generate_query(message, schemas, history, model=model)
+    query_response = await llm_service.generate_query(message, schemas, model, chat_history=history)
 
     query = query_response.get("query", "")
     query_type = query_response.get("query_type", "sql")

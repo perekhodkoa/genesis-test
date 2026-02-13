@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 class ChatRequest(BaseModel):
     session_id: str | None = None  # None = new session
     message: str = Field(min_length=1, max_length=4000)
-    model: str = "default"
+    model: str
 
 
 class VisualizationResponse(BaseModel):

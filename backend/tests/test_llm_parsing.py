@@ -22,7 +22,7 @@ async def test_clean_json_response():
     response = _make_llm_response(json.dumps(payload))
 
     with patch("httpx.AsyncClient.post", AsyncMock(return_value=response)):
-        result = await _call_llm([{"role": "user", "content": "hi"}])
+        result = await _call_llm([{"role": "user", "content": "hi"}], model="test-model")
 
     assert result["query"] == "SELECT 1"
     assert result["query_type"] == "sql"
@@ -36,7 +36,7 @@ async def test_markdown_fenced_json():
     response = _make_llm_response(fenced)
 
     with patch("httpx.AsyncClient.post", AsyncMock(return_value=response)):
-        result = await _call_llm([{"role": "user", "content": "hi"}])
+        result = await _call_llm([{"role": "user", "content": "hi"}], model="test-model")
 
     assert result["query"] == "SELECT 2"
 
@@ -49,7 +49,7 @@ async def test_markdown_fenced_no_lang():
     response = _make_llm_response(fenced)
 
     with patch("httpx.AsyncClient.post", AsyncMock(return_value=response)):
-        result = await _call_llm([{"role": "user", "content": "hi"}])
+        result = await _call_llm([{"role": "user", "content": "hi"}], model="test-model")
 
     assert result["answer"] == "42"
 
@@ -60,7 +60,7 @@ async def test_plain_text_fallback():
     response = _make_llm_response("I don't know the answer to that question.")
 
     with patch("httpx.AsyncClient.post", AsyncMock(return_value=response)):
-        result = await _call_llm([{"role": "user", "content": "hi"}])
+        result = await _call_llm([{"role": "user", "content": "hi"}], model="test-model")
 
     assert result["answer"] == "I don't know the answer to that question."
     assert result["query"] == ""
@@ -92,7 +92,7 @@ async def test_generate_query_passes_schemas():
     ]
 
     with patch("httpx.AsyncClient.post", AsyncMock(return_value=response)) as mock_post:
-        result = await generate_query("show me all sales", schemas)
+        result = await generate_query("show me all sales", schemas, model="test-model")
 
     assert result["query"] == "SELECT * FROM sales"
     # Verify schemas were included in the request
@@ -111,7 +111,7 @@ async def test_whitespace_around_json():
     response = _make_llm_response(f"  \n{json.dumps(payload)}\n  ")
 
     with patch("httpx.AsyncClient.post", AsyncMock(return_value=response)):
-        result = await _call_llm([{"role": "user", "content": "hi"}])
+        result = await _call_llm([{"role": "user", "content": "hi"}], model="test-model")
 
     assert result["query"] == "SELECT 3"
 
@@ -125,7 +125,7 @@ async def test_generate_query_wraps_user_message_in_delimiters():
     schemas = [{"name": "t", "db_type": "postgres", "description": "Test", "row_count": 1, "columns": []}]
 
     with patch("httpx.AsyncClient.post", AsyncMock(return_value=response)) as mock_post:
-        await generate_query("show data", schemas)
+        await generate_query("show data", schemas, model="test-model")
 
     sent_payload = mock_post.call_args.kwargs.get("json") or mock_post.call_args.kwargs["json"]
     messages = sent_payload["messages"]
@@ -145,7 +145,7 @@ async def test_generate_answer_wraps_results_in_delimiters():
     schemas = [{"name": "t", "db_type": "postgres", "description": "Test", "row_count": 1, "columns": []}]
 
     with patch("httpx.AsyncClient.post", AsyncMock(return_value=response)) as mock_post:
-        await generate_answer("what is total?", "SELECT SUM(x) FROM t", "sql", [{"sum": 42}], schemas)
+        await generate_answer("what is total?", "SELECT SUM(x) FROM t", "sql", [{"sum": 42}], schemas, model="test-model")
 
     sent_payload = mock_post.call_args.kwargs.get("json") or mock_post.call_args.kwargs["json"]
     messages = sent_payload["messages"]
@@ -170,7 +170,7 @@ async def test_schema_descriptions_are_sanitized():
     }]
 
     with patch("httpx.AsyncClient.post", AsyncMock(return_value=response)) as mock_post:
-        await generate_query("show data", schemas)
+        await generate_query("show data", schemas, model="test-model")
 
     sent_payload = mock_post.call_args.kwargs.get("json") or mock_post.call_args.kwargs["json"]
     messages = sent_payload["messages"]

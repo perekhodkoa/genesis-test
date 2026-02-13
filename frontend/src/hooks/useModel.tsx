@@ -16,7 +16,7 @@ const STORAGE_KEY = 'selected_model';
 export function ModelProvider({ children }: { children: ReactNode }) {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [selectedModel, setSelectedModelState] = useState<string>(
-    () => localStorage.getItem(STORAGE_KEY) || 'default'
+    () => localStorage.getItem(STORAGE_KEY) || ''
   );
   const [loading, setLoading] = useState(true);
 
@@ -32,7 +32,7 @@ export function ModelProvider({ children }: { children: ReactNode }) {
         localStorage.setItem(STORAGE_KEY, res.default);
       }
     } catch {
-      setModels([{ id: 'default', name: 'default' }]);
+      setModels([]);
     } finally {
       setLoading(false);
     }

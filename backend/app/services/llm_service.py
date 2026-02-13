@@ -75,8 +75,8 @@ Respond with valid JSON:
 async def generate_query(
     user_message: str,
     collection_schemas: list[dict],
+    model: str,
     chat_history: list[dict] | None = None,
-    model: str = "default",
 ) -> dict:
     """Ask LLM to generate a database query for the user's question."""
     schema_text = _format_schemas(collection_schemas)
@@ -113,7 +113,7 @@ async def generate_answer(
     query_type: str,
     results: list[dict],
     collection_schemas: list[dict],
-    model: str = "default",
+    model: str,
 ) -> dict:
     """Ask LLM to produce a natural language answer from query results."""
     # Truncate results to avoid token burn
@@ -162,7 +162,7 @@ def _format_schemas(schemas: list[dict]) -> str:
     return "\n\n".join(parts)
 
 
-async def _call_llm(messages: list[dict], model: str = "default") -> dict:
+async def _call_llm(messages: list[dict], model: str) -> dict:
     """Call LiteLLM proxy and parse JSON response."""
     url = f"{settings.litellm_proxy_url}/v1/chat/completions"
     headers = {}

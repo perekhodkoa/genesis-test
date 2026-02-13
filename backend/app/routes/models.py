@@ -68,11 +68,12 @@ async def _fetch_models_from_proxy() -> list[dict]:
     if _cached_models is not None:
         return _cached_models
 
-    return [{"id": "default", "name": "claude-sonnet-4-5-20250929"}]
+    return []
 
 
 @router.get("", response_model=ModelsResponse)
 async def list_models(_user_id: str = Depends(get_current_user_id)):
     """List available LLM models."""
     models = await _fetch_models_from_proxy()
-    return {"models": models, "default": "default"}
+    default = models[0]["id"] if models else ""
+    return {"models": models, "default": default}
