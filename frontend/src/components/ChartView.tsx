@@ -47,8 +47,8 @@ export default function ChartView({ data }: Props) {
               outerRadius={100}
               innerRadius={40}
               dataKey="value"
-              label={({ name, percent }) =>
-                `${name.length > 12 ? name.slice(0, 12) + '...' : name} ${(percent * 100).toFixed(0)}%`
+              label={({ name, percent }: { name?: string; percent?: number }) =>
+                `${(name ?? '').length > 12 ? (name ?? '').slice(0, 12) + '...' : (name ?? '')} ${((percent ?? 0) * 100).toFixed(0)}%`
               }
               labelLine={{ strokeWidth: 1 }}
             >
