@@ -1,0 +1,13 @@
+.chat-page {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.chat-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--color-text-muted);
+}

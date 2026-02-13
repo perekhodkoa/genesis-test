@@ -1,0 +1,13 @@
+.browse-page {
+  flex: 1;
+  padding: var(--space-6);
+  overflow-y: auto;
+}
+
+.browse-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--color-text-muted);
+}
