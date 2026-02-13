@@ -5,6 +5,7 @@ import AuthPage from './pages/AuthPage';
 import ChatPage from './pages/ChatPage';
 import UploadPage from './pages/UploadPage';
 import BrowsePage from './pages/BrowsePage';
+import InvitesPage from './pages/InvitesPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -45,6 +46,7 @@ export default function App() {
             <Route path="/chat/:sessionId" element={<ChatPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/browse" element={<BrowsePage />} />
+            <Route path="/invites" element={<InvitesPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/chat" replace />} />
         </Routes>

@@ -3,7 +3,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.postgres import get_pg_session
 from app.dependencies import get_current_user_id
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from app.schemas.auth import (
+    InviteCodeDetail,
+    InviteCodeResponse,
+    LoginRequest,
+    RegisterRequest,
+    TokenResponse,
+    UserResponse,
+)
 from app.services import auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -11,7 +18,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=TokenResponse)
 async def register(body: RegisterRequest, session: AsyncSession = Depends(get_pg_session)):
-    return await auth_service.register(session, body.username, body.password)
+    return await auth_service.register(
+        session, body.username, body.password, body.invite_code
+    )
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -25,3 +34,19 @@ async def me(
     session: AsyncSession = Depends(get_pg_session),
 ):
     return await auth_service.get_current_user(session, user_id)
+
+
+@router.post("/invites", response_model=InviteCodeResponse)
+async def create_invite(
+    user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_pg_session),
+):
+    return await auth_service.create_invite(session, user_id)
+
+
+@router.get("/invites", response_model=list[InviteCodeDetail])
+async def list_invites(
+    user_id: str = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_pg_session),
+):
+    return await auth_service.list_invites(session, user_id)

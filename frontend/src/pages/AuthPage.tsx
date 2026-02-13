@@ -8,6 +8,7 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +21,7 @@ export default function AuthPage() {
       if (isLogin) {
         await login(username, password);
       } else {
-        await register(username, password);
+        await register(username, password, inviteCode || undefined);
       }
     } catch (err) {
       if (err instanceof ApiError) {
@@ -81,6 +82,19 @@ export default function AuthPage() {
               minLength={6}
             />
           </label>
+
+          {!isLogin && (
+            <label className="auth-label">
+              <span>Invite code</span>
+              <input
+                type="text"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                className="auth-input"
+                placeholder="Required unless you're the first user"
+              />
+            </label>
+          )}
 
           <button type="submit" className="auth-submit" disabled={loading}>
             {loading ? 'Please wait...' : isLogin ? 'Sign in' : 'Create account'}

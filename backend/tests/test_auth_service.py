@@ -18,6 +18,7 @@ async def test_register_success(mock_pg_session):
         return FakeUser(id=new_user_id, username=username, password_hash=pw_hash)
 
     with (
+        patch.object(auth_service.invite_repo, "has_any_user", AsyncMock(return_value=False)),
         patch.object(auth_service.user_repo, "get_user_by_username", AsyncMock(return_value=None)),
         patch.object(auth_service.user_repo, "create_user", side_effect=fake_create),
     ):
@@ -39,6 +40,7 @@ async def test_register_lowercases_username(mock_pg_session):
         return FakeUser(id=uuid.uuid4(), username=username, password_hash=pw_hash)
 
     with (
+        patch.object(auth_service.invite_repo, "has_any_user", AsyncMock(return_value=False)),
         patch.object(auth_service.user_repo, "get_user_by_username", AsyncMock(return_value=None)),
         patch.object(auth_service.user_repo, "create_user", side_effect=fake_create),
     ):

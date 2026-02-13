@@ -9,6 +9,20 @@ export interface User {
   username: string;
 }
 
+// Invites
+export interface InviteCodeResponse {
+  code: string;
+  expires_at: string;
+}
+
+export interface InviteCodeDetail {
+  code: string;
+  created_at: string;
+  expires_at: string;
+  is_used: boolean;
+  used_by: string | null;
+}
+
 // Upload
 export interface ColumnInfo {
   name: string;

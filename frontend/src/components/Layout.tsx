@@ -19,6 +19,9 @@ export default function Layout() {
           <NavLink to="/browse" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
             Browse
           </NavLink>
+          <NavLink to="/invites" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+            Invites
+          </NavLink>
         </nav>
         <div className="layout-user">
           <span className="layout-username">{user?.username}</span>
